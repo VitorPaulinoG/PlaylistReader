@@ -20,9 +20,9 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Deferred imports (heavier dependencies)
-    from music_downloader.downloader import DownloadError, download_track
-    from music_downloader.metadata import set_metadata
-    from music_downloader.yaml_parser import parse_playlist
+    from playlist_downloader.downloader import DownloadError, download_track
+    from playlist_downloader.metadata import set_metadata
+    from playlist_downloader.yaml_parser import parse_playlist
 
     playlist = parse_playlist(str(yaml_path))
     print(f"[Playlist] {playlist.nome} - {len(playlist.musicas)} faixa(s)")

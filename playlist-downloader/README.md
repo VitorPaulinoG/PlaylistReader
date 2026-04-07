@@ -1,4 +1,4 @@
-# music-downloader
+# playlist-downloader
 
 CLI que baixa musicas de uma playlist (arquivo YAML) como MP3 via yt-dlp, preenchendo automaticamente os metadados ID3.
 
@@ -10,7 +10,7 @@ CLI que baixa musicas de uma playlist (arquivo YAML) como MP3 via yt-dlp, preenc
 ## Instalacao
 
 ```bash
-cd music-downloader
+cd playlist-downloader
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -25,13 +25,13 @@ source .venv/bin/activate
 ## Uso
 
 ```bash
-music-downloader <caminho-do-yaml> <diretorio-saida>
+playlist-downloader <caminho-do-yaml> <diretorio-saida>
 ```
 
 ### Exemplo
 
 ```bash
-music-downloader playlist.yaml ~/Musicas/MinhaPlaylist
+playlist-downloader playlist.yaml ~/Musicas/MinhaPlaylist
 ```
 
 ### Formato do YAML

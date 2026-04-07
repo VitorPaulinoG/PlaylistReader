@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "PlaylistReader",
+  "description": "Exporta playlists do Spotify Web Player para arquivo YAML com informacoes detalhadas de cada faixa.",
+  "version": "1.0.0",
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
+  },
+  "permissions": [
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api.spotify.com/*"
+  ],
+  "background": {
+    "scripts": ["scripts/js-yaml.min.js", "scripts/background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://open.spotify.com/*"],
+      "js": ["scripts/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["scripts/inject.js"],
+      "matches": ["https://open.spotify.com/*"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+[console_scripts]
+music-downloader = music_downloader.cli:main

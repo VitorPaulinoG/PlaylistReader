@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: music-downloader
+Version: 0.1.0
+Summary: CLI que baixa músicas da playlist usando yt-dlp e preenche metadados
+Requires-Python: >=3.11
+Requires-Dist: mutagen>=1.47
+Requires-Dist: pyyaml>=6.0

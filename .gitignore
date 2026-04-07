@@ -1,0 +1,29 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# Config files
+.vscode/
+.idea/
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Firefox temp extension files
+*.xpi
+web-ext-artifacts/
+
+# Bundling
+node_modules/
+dist/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+
+context/
+prompts/

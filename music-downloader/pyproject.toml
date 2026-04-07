@@ -1,0 +1,16 @@
+[project]
+name = "music-downloader"
+version = "0.1.0"
+description = "CLI que baixa músicas da playlist usando yt-dlp e preenche metadados"
+requires-python = ">=3.11"
+dependencies = [
+    "mutagen>=1.47",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+music-downloader = "music_downloader.cli:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"

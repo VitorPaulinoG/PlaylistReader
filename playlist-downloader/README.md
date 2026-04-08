@@ -1,13 +1,13 @@
 # playlist-downloader
 
-CLI que baixa musicas de uma playlist (arquivo YAML) como MP3 via yt-dlp, preenchendo automaticamente os metadados ID3.
+CLI for downloading tracks from a YAML playlist as MP3 files with ID3 metadata, powered by `yt-dlp`.
 
-## Pre-requisitos
+## Requirements
 
 - Python 3.11+
-- [FFmpeg](https://ffmpeg.org/) (necessario para `yt-dlp` extrair audio)
+- [FFmpeg](https://ffmpeg.org/) available on `PATH`
 
-## Instalacao
+## Installation
 
 ```bash
 cd playlist-downloader
@@ -16,35 +16,48 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-O comando acima instala tambem as dependencias Python do projeto, incluindo `yt-dlp`.
+The project installs its Python dependencies through `pip`, including `yt-dlp`, `typer`, and `rich`.
 
-Nos proximos usos, basta ativar o ambiente virtual:
-
-```bash
-source .venv/bin/activate
-```
-
-## Uso
+## Usage
 
 ```bash
-playlist-downloader <caminho-do-yaml> <diretorio-saida>
+playlist-downloader download [OPTIONS] PLAYLIST_FILE OUTPUT_DIR
 ```
 
-### Exemplo
+### Playlist mode
+
+Download tracks from a YAML file:
 
 ```bash
-playlist-downloader playlist.yaml ~/Musicas/MinhaPlaylist
+playlist-downloader download ../context/example.yaml /tmp/playlist-reader-smoke
 ```
 
-Para validar com o arquivo de exemplo deste repositorio:
+Download a subset of the playlist:
 
 ```bash
-playlist-downloader ../context/example.yaml /tmp/playlist-reader-smoke
+playlist-downloader download ../context/example.yaml /tmp/playlist-reader-smoke --start-from 1 --limit 1 --show-url
 ```
 
-### Formato do YAML
+### Search mode
 
-O arquivo deve seguir o formato abaixo:
+Download a single track without a YAML file:
+
+```bash
+playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho"
+```
+
+## Options
+
+- `--overwrite`: replace an existing file with the same final name
+- `--verbose`: print per-track progress while downloading
+- `--limit INT`: process at most `INT` tracks
+- `--start-from INT`: zero-based index into the YAML `musicas` array
+- `--show-url`: show resolved source URLs in the final summary
+- `--search TITLE ARTIST ALBUM`: download a single manually specified track
+
+`--limit` and `--start-from` are only valid in playlist mode.
+
+## Playlist format
 
 ```yaml
 playlist:
@@ -60,43 +73,15 @@ playlist:
       posicao: 1
 ```
 
-## Como funciona
+## Behavior
 
-1. **Busca** -- Para cada musica, a busca concatena `nome da musica + primeiro artista + album` usando o prefixo `ytsearch1:` do yt-dlp, que seleciona o primeiro resultado do YouTube.
-2. **Download** -- Baixa apenas o audio em MP3 (formato MP3, melhor qualidade).
-3. **Metadados** -- Edita as tags ID3 do arquivo MP3:
-   - **Titulo**: `Nome da Musica - Primeiro Artista`
-   - **Artista**: lista de artistas do YAML
-   - **Album**: nome do album
-   - **Numero da faixa**: posicao na playlist
+- Search queries are built from `title + first artist + album`.
+- Output files are named as `Title - First Artist.mp3`.
+- Metadata is written with title, artists, album, and track number.
+- Without `--verbose`, the CLI stays mostly quiet and always prints a final summary.
+- With `--show-url`, resolved URLs are listed in the final summary.
 
-## Saida
-
-Cada arquivo MP3 e salvo no diretorio de saida com o nome:
-
-```
-Nome da Musica - Primeiro Artista.mp3
-```
-
-O CLI mostra o progresso faixa a faixa:
-
-```
-[Playlist] Classicos Melodicos BR - 3 faixa(s)
-
-[1/3] Baixando: Quando Eu Me Chamar Saudade - Nelson Cavaquinho
-  Editando metadados...
-  Salvo: Quando Eu Me Chamar Saudade - Nelson Cavaquinho.mp3
-
-[2/3] Baixando: Juizo Final - Nelson Cavaquinho
-  Editando metadados...
-  Salvo: Juizo Final - Nelson Cavaquinho.mp3
-
-Concluido.
-```
-
-## Testes
-
-Para executar a suite local:
+## Tests
 
 ```bash
 cd playlist-downloader

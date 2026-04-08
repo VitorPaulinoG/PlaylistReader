@@ -39,19 +39,45 @@ class DownloaderTest(unittest.TestCase):
             completed_process = CompletedProcess(
                 args=[],
                 returncode=0,
-                stdout=f"{source_path}\n",
+                stdout=f"https://youtube.test/watch?v=123\n{source_path}\n",
                 stderr="",
             )
 
             with patch("playlist_downloader.downloader.subprocess.run", return_value=completed_process) as run_mock:
                 result = downloader.download(track, output_dir)
-                self.assertEqual("Faixa - Artista (2).mp3", result.name)
-                self.assertTrue(result.exists())
+                self.assertEqual("Faixa - Artista (2).mp3", result.filepath.name)
+                self.assertTrue(result.filepath.exists())
                 self.assertTrue(existing_destination.exists())
+                self.assertEqual("https://youtube.test/watch?v=123", result.source_url)
                 run_mock.assert_called_once()
                 command = run_mock.call_args.args[0]
                 self.assertEqual("python-test", command[0])
                 self.assertIn("ytsearch1:Faixa, Artista, Album", command)
+
+    def test_download_overwrites_existing_file_when_requested(self) -> None:
+        track = Track(nome="Faixa", artistas=["Artista"], album="Album", posicao=1)
+        downloader = YtDlpTrackDownloader(python_executable="python-test")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            source_path = output_dir / "video-id.mp3"
+            source_path.write_bytes(b"new")
+            destination = output_dir / "Faixa - Artista.mp3"
+            destination.write_bytes(b"old")
+
+            completed_process = CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout=f"{source_path}\n",
+                stderr="",
+            )
+
+            with patch("playlist_downloader.downloader.subprocess.run", return_value=completed_process):
+                result = downloader.download(track, output_dir, overwrite=True)
+                final_bytes = destination.read_bytes()
+
+        self.assertEqual(destination, result.filepath)
+        self.assertEqual(b"new", final_bytes)
 
 
 if __name__ == "__main__":

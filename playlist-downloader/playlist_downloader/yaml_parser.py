@@ -1,42 +1,35 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
+from pathlib import Path
 
 import yaml
 
-
-@dataclass
-class Track:
-    nome: str
-    artistas: list[str]
-    album: str
-    duracao: str
-    data_lancamento: str
-    posicao: int
-
-    @property
-    def primeiro_artista(self) -> str:
-        return self.artistas[0] if self.artistas else "Desconhecido"
+from playlist_downloader.models import Playlist, Track
 
 
-@dataclass
-class Playlist:
-    nome: str
-    musicas: list[Track]
+class YamlPlaylistParser:
+    def parse(self, path: Path) -> Playlist:
+        with path.open(encoding="utf-8") as file:
+            data = yaml.safe_load(file) or {}
 
+        playlist_data = data["playlist"]
+        tracks = [
+            self._build_track(item)
+            for item in playlist_data.get("musicas", [])
+        ]
+        return Playlist(nome=playlist_data.get("nome", "Playlist"), musicas=tracks)
 
-def parse_playlist(path: str) -> Playlist:
-    with open(path, encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    playlist = data["playlist"]
-    tracks = []
-    for item in playlist.get("musicas", []):
-        tracks.append(Track(
+    @staticmethod
+    def _build_track(item: dict) -> Track:
+        return Track(
             nome=item["nome"],
             artistas=item.get("artistas", []),
             album=item.get("album", "Desconhecido"),
             duracao=item.get("duracao", "0:00"),
             data_lancamento=item.get("data_lancamento", "Desconhecida"),
             posicao=item.get("posicao", 0),
-        ))
+        )
 
-    return Playlist(nome=playlist.get("nome", "Playlist"), musicas=tracks)
+
+def parse_playlist(path: str) -> Playlist:
+    return YamlPlaylistParser().parse(Path(path))

@@ -16,6 +16,8 @@ source .venv/bin/activate
 pip install -e .
 ```
 
+O comando acima instala tambem as dependencias Python do projeto, incluindo `yt-dlp`.
+
 Nos proximos usos, basta ativar o ambiente virtual:
 
 ```bash
@@ -32,6 +34,12 @@ playlist-downloader <caminho-do-yaml> <diretorio-saida>
 
 ```bash
 playlist-downloader playlist.yaml ~/Musicas/MinhaPlaylist
+```
+
+Para validar com o arquivo de exemplo deste repositorio:
+
+```bash
+playlist-downloader ../context/example.yaml /tmp/playlist-reader-smoke
 ```
 
 ### Formato do YAML
@@ -84,4 +92,14 @@ O CLI mostra o progresso faixa a faixa:
   Salvo: Juizo Final - Nelson Cavaquinho.mp3
 
 Concluido.
+```
+
+## Testes
+
+Para executar a suite local:
+
+```bash
+cd playlist-downloader
+source .venv/bin/activate
+PYTHONPATH=. python -m unittest discover -s tests -v
 ```

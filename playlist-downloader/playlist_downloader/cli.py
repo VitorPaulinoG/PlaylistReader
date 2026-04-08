@@ -19,33 +19,19 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Deferred imports (heavier dependencies)
-    from playlist_downloader.downloader import DownloadError, download_track
-    from playlist_downloader.metadata import set_metadata
-    from playlist_downloader.yaml_parser import parse_playlist
+    from playlist_downloader.downloader import YtDlpTrackDownloader
+    from playlist_downloader.metadata import Id3MetadataWriter
+    from playlist_downloader.services import PlaylistDownloadService
+    from playlist_downloader.yaml_parser import YamlPlaylistParser
 
-    playlist = parse_playlist(str(yaml_path))
-    print(f"[Playlist] {playlist.nome} - {len(playlist.musicas)} faixa(s)")
-    print()
+    service = PlaylistDownloadService(
+        parser=YamlPlaylistParser(),
+        downloader=YtDlpTrackDownloader(),
+        metadata_writer=Id3MetadataWriter(),
+        output=sys.stdout,
+    )
+    service.run(yaml_path, output_dir)
 
-    for track in playlist.musicas:
-        n = f"[{track.posicao}/{len(playlist.musicas)}]"
-        print(f"{n} Baixando: {track.nome} - {track.primeiro_artista}")
 
-        try:
-            out_path = download_track(track, output_dir)
-        except DownloadError as e:
-            print(f"  Erro ao baixar: {e}")
-            continue
-
-        print(f"  Editando metadados...")
-        try:
-            set_metadata(out_path, track)
-        except Exception as e:
-            print(f"  Erro ao editar metadados: {e}")
-        else:
-            print(f"  Salvo: {out_path.name}")
-
-        print()
-
-    print("Concluído.")
+if __name__ == "__main__":
+    main()

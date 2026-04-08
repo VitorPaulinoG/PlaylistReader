@@ -28,6 +28,7 @@ class YamlPlaylistParser:
             duracao=item.get("duracao", "0:00"),
             data_lancamento=item.get("data_lancamento", "Desconhecida"),
             posicao=item.get("posicao", 0),
+            raw_data=dict(item),
         )
 
 

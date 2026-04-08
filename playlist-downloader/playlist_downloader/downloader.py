@@ -16,6 +16,7 @@ class DownloadError(Exception):
 class DownloadArtifact:
     filepath: Path
     source_url: str | None = None
+    skipped: bool = False
 
 
 def build_search_query(track: Track) -> str:
@@ -35,6 +36,10 @@ class YtDlpTrackDownloader:
     def download(self, track: Track, output_dir: Path, overwrite: bool = False) -> DownloadArtifact:
         query = build_search_query(track)
         output_dir.mkdir(parents=True, exist_ok=True)
+        target_path = output_dir / f"{sanitize_filename(track.titulo_exibicao)}.mp3"
+
+        if target_path.exists() and not overwrite:
+            return DownloadArtifact(filepath=target_path, skipped=True)
 
         result = subprocess.run(
             self._build_command(output_dir, query),

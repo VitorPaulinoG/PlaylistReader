@@ -8,6 +8,7 @@ import typer
 from playlist_downloader.downloader import YtDlpTrackDownloader
 from playlist_downloader.metadata import Id3MetadataWriter
 from playlist_downloader.reporters import RichDownloadReporter
+from playlist_downloader.skipped_tracks import SkippedTracksWriter
 from playlist_downloader.services import DownloadOptions, PlaylistDownloadService
 from playlist_downloader.yaml_parser import YamlPlaylistParser
 
@@ -29,6 +30,7 @@ def _build_service(verbose: bool, show_url: bool) -> PlaylistDownloadService:
         downloader=YtDlpTrackDownloader(),
         metadata_writer=Id3MetadataWriter(),
         reporter=RichDownloadReporter(verbose=verbose, show_url=show_url),
+        skipped_tracks_writer=SkippedTracksWriter(),
     )
 
 

@@ -25,7 +25,7 @@ class DownloaderTest(unittest.TestCase):
             query,
         )
 
-    def test_download_renames_file_and_avoids_overwrite(self) -> None:
+    def test_download_skips_when_final_file_already_exists(self) -> None:
         track = Track(nome="Faixa", artistas=["Artista"], album="Album", posicao=1)
         downloader = YtDlpTrackDownloader(python_executable="python-test")
 
@@ -45,14 +45,12 @@ class DownloaderTest(unittest.TestCase):
 
             with patch("playlist_downloader.downloader.subprocess.run", return_value=completed_process) as run_mock:
                 result = downloader.download(track, output_dir)
-                self.assertEqual("Faixa - Artista (2).mp3", result.filepath.name)
+                self.assertEqual("Faixa - Artista.mp3", result.filepath.name)
                 self.assertTrue(result.filepath.exists())
                 self.assertTrue(existing_destination.exists())
-                self.assertEqual("https://youtube.test/watch?v=123", result.source_url)
-                run_mock.assert_called_once()
-                command = run_mock.call_args.args[0]
-                self.assertEqual("python-test", command[0])
-                self.assertIn("ytsearch1:Faixa, Artista, Album", command)
+                self.assertTrue(result.skipped)
+                self.assertIsNone(result.source_url)
+                run_mock.assert_not_called()
 
     def test_download_overwrites_existing_file_when_requested(self) -> None:
         track = Track(nome="Faixa", artistas=["Artista"], album="Album", posicao=1)
@@ -78,6 +76,23 @@ class DownloaderTest(unittest.TestCase):
 
         self.assertEqual(destination, result.filepath)
         self.assertEqual(b"new", final_bytes)
+
+    def test_download_skips_existing_file_without_overwrite(self) -> None:
+        track = Track(nome="Faixa", artistas=["Artista"], album="Album", posicao=1)
+        downloader = YtDlpTrackDownloader(python_executable="python-test")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            destination = output_dir / "Faixa - Artista.mp3"
+            destination.write_bytes(b"existing")
+
+            with patch("playlist_downloader.downloader.subprocess.run") as run_mock:
+                result = downloader.download(track, output_dir, overwrite=False)
+
+        self.assertEqual(destination, result.filepath)
+        self.assertTrue(result.skipped)
+        self.assertIsNone(result.source_url)
+        run_mock.assert_not_called()
 
 
 if __name__ == "__main__":

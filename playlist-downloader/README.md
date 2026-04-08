@@ -56,6 +56,7 @@ playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final"
 - `--search TITLE ARTIST ALBUM`: download a single manually specified track
 
 `--limit` and `--start-from` are only valid in playlist mode.
+When a target file already exists and `--overwrite` is not set, the track is skipped.
 
 ## Playlist format
 
@@ -78,6 +79,8 @@ playlist:
 - Search queries are built from `title + first artist + album`.
 - Output files are named as `Title - First Artist.mp3`.
 - Metadata is written with title, artists, album, and track number.
+- Skipped tracks are exported to `OUTPUT_DIR/.playlist-downloader/skipped/<playlist-name>-NNN.skipped.yaml`.
+- The numeric suffix is sequential, for example `Clássicos Melódicos BR-001.skipped.yaml`.
 - Without `--verbose`, the CLI stays mostly quiet and always prints a final summary.
 - With `--show-url`, resolved URLs are listed in the final summary.
 

@@ -23,7 +23,9 @@ dist/
 .venv/
 __pycache__/
 *.pyc
+*.egg-info/
 
 
 context/
 prompts/
+.codex/

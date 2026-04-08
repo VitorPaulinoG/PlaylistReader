@@ -6,6 +6,7 @@ from typing import Protocol
 
 from playlist_downloader.downloader import DownloadArtifact, DownloadError
 from playlist_downloader.models import Playlist, Track
+from playlist_downloader.skipped_tracks import SkippedTracksWriter
 
 
 class PlaylistParser(Protocol):
@@ -23,6 +24,13 @@ class MetadataWriter(Protocol):
 class DownloadReporter(Protocol):
     def on_collection_start(self, label: str, total_tracks: int) -> None: ...
     def on_track_start(self, index: int, total_tracks: int, track: Track) -> None: ...
+    def on_track_skipped(
+        self,
+        index: int,
+        total_tracks: int,
+        track: Track,
+        artifact: DownloadArtifact,
+    ) -> None: ...
     def on_track_success(
         self,
         index: int,
@@ -49,6 +57,7 @@ class TrackDownloadResult:
     index: int
     total_tracks: int
     success: bool
+    skipped: bool = False
     output_path: Path | None = None
     source_url: str | None = None
     error: str | None = None
@@ -63,6 +72,7 @@ class DownloadSummary:
     failed_count: int
     skipped_count: int
     results: list[TrackDownloadResult] = field(default_factory=list)
+    skipped_manifest_path: Path | None = None
 
 
 @dataclass(slots=True)
@@ -71,6 +81,7 @@ class PlaylistDownloadService:
     downloader: TrackDownloader
     metadata_writer: MetadataWriter
     reporter: DownloadReporter
+    skipped_tracks_writer: SkippedTracksWriter | None = None
 
     def run_playlist(self, yaml_path: Path, output_dir: Path, options: DownloadOptions) -> DownloadSummary:
         playlist = self.parser.parse(yaml_path)
@@ -81,6 +92,7 @@ class PlaylistDownloadService:
             tracks=selected_tracks,
             output_dir=output_dir,
             options=options,
+            source_path=yaml_path,
         )
 
     def run_search(
@@ -103,6 +115,7 @@ class PlaylistDownloadService:
             tracks=[track],
             output_dir=output_dir,
             options=options,
+            source_path=Path("search.yaml"),
         )
 
     @staticmethod
@@ -119,6 +132,7 @@ class PlaylistDownloadService:
         tracks: list[Track],
         output_dir: Path,
         options: DownloadOptions,
+        source_path: Path | None,
     ) -> DownloadSummary:
         total_tracks = len(tracks)
         self.reporter.on_collection_start(label, total_tracks)
@@ -132,11 +146,28 @@ class PlaylistDownloadService:
             label=label,
             mode=mode,
             total_tracks=total_tracks,
-            downloaded_count=sum(1 for result in results if result.success),
+            downloaded_count=sum(1 for result in results if result.success and not result.skipped),
             failed_count=sum(1 for result in results if not result.success),
-            skipped_count=0,
+            skipped_count=sum(1 for result in results if result.skipped),
             results=results,
         )
+        if self.skipped_tracks_writer is not None and source_path is not None:
+            skipped_tracks = [result.track for result in results if result.skipped]
+            summary = DownloadSummary(
+                label=summary.label,
+                mode=summary.mode,
+                total_tracks=summary.total_tracks,
+                downloaded_count=summary.downloaded_count,
+                failed_count=summary.failed_count,
+                skipped_count=summary.skipped_count,
+                results=summary.results,
+                skipped_manifest_path=self.skipped_tracks_writer.write(
+                    output_dir=output_dir,
+                    playlist_name=label,
+                    source_path=source_path,
+                    tracks=skipped_tracks,
+                ),
+            )
         self.reporter.on_collection_finished(summary)
         return summary
 
@@ -150,6 +181,16 @@ class PlaylistDownloadService:
     ) -> TrackDownloadResult:
         try:
             artifact = self.downloader.download(track, output_dir, overwrite=options.overwrite)
+            if artifact.skipped:
+                self.reporter.on_track_skipped(index, total_tracks, track, artifact)
+                return TrackDownloadResult(
+                    track=track,
+                    index=index,
+                    total_tracks=total_tracks,
+                    success=True,
+                    skipped=True,
+                    output_path=artifact.filepath,
+                )
             self.metadata_writer.write(artifact.filepath, track)
         except DownloadError as error:
             message = str(error)

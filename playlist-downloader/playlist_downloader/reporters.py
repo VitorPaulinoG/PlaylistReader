@@ -38,6 +38,17 @@ class RichDownloadReporter:
             return
         self.console.print(f"  Saved: {artifact.filepath.name}")
 
+    def on_track_skipped(
+        self,
+        index: int,
+        total_tracks: int,
+        track: Track,
+        artifact: DownloadArtifact,
+    ) -> None:
+        self.console.print(
+            f"[yellow]Skipped[/yellow] [{index}/{total_tracks}] {track.titulo_exibicao}: {artifact.filepath.name}"
+        )
+
     def on_track_failure(self, index: int, total_tracks: int, track: Track, error: str) -> None:
         self.console.print(f"[red]Error[/red] [{index}/{total_tracks}] {track.titulo_exibicao}: {error}")
 
@@ -52,6 +63,11 @@ class RichDownloadReporter:
         table.add_row("Failed", str(summary.failed_count))
         table.add_row("Skipped", str(summary.skipped_count))
         self.console.print(table)
+
+        if summary.skipped_manifest_path is not None:
+            self.console.print(
+                f"[bold]Skipped manifest:[/bold] {summary.skipped_manifest_path}"
+            )
 
         if not self.show_url:
             return

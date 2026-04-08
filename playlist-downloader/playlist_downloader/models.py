@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -11,6 +12,7 @@ class Track:
     duracao: str = "0:00"
     data_lancamento: str = "Desconhecida"
     posicao: int = 0
+    raw_data: dict[str, Any] = field(default_factory=dict)
 
     @property
     def primeiro_artista(self) -> str:

@@ -38,12 +38,24 @@ Download a subset of the playlist:
 playlist-downloader download ../context/example.yaml /tmp/playlist-reader-smoke --start-from 1 --limit 1 --show-url
 ```
 
+Use heuristic candidate selection:
+
+```bash
+playlist-downloader download ../context/example.yaml /tmp/playlist-reader-smoke --smart-search --candidate-count 10 --prefer-official
+```
+
 ### Search mode
 
 Download a single track without a YAML file:
 
 ```bash
 playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho"
+```
+
+Review candidates interactively before downloading:
+
+```bash
+playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho" --review-search
 ```
 
 ## Options
@@ -53,10 +65,29 @@ playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final"
 - `--limit INT`: process at most `INT` tracks
 - `--start-from INT`: zero-based index into the YAML `musicas` array
 - `--show-url`: show resolved source URLs in the final summary
+- `--smart-search`: inspect multiple search candidates and auto-pick the best match
+- `--review-search`: inspect candidates interactively before downloading
+- `--candidate-count INT`: number of candidates to inspect in smart or review search
+- `--prefer-official`: boost candidates that look like official or auto-generated releases
 - `--search TITLE ARTIST ALBUM`: download a single manually specified track
 
 `--limit` and `--start-from` are only valid in playlist mode.
 When a target file already exists and `--overwrite` is not set, the track is skipped.
+`--smart-search` and `--review-search` are mutually exclusive.
+
+## Review Search Actions
+
+When `--review-search` is active, the CLI shows one candidate at a time and waits for an action:
+
+- `y`: download the current candidate
+- `n`: reject the current candidate and move to the next candidate from the same search result list
+- `s`: stop evaluating candidates for the current track and mark it as unresolved
+- `q`: abort the whole command immediately
+
+Difference between `n` and `s`:
+
+- `n` continues the review flow with the next candidate for the same track
+- `s` stops the review flow for the current track entirely, without downloading anything
 
 ## Playlist format
 
@@ -81,6 +112,7 @@ playlist:
 - Metadata is written with title, artists, album, and track number.
 - Skipped tracks are exported to `OUTPUT_DIR/.playlist-downloader/skipped/<playlist-name>-NNN.skipped.yaml`.
 - The numeric suffix is sequential, for example `Clássicos Melódicos BR-001.skipped.yaml`.
+- Tracks that do not meet the smart-search requirements are exported to `OUTPUT_DIR/.playlist-downloader/unresolved/<playlist-name>-NNN.unresolved.yaml`.
 - Without `--verbose`, the CLI stays mostly quiet and always prints a final summary.
 - With `--show-url`, resolved URLs are listed in the final summary.
 

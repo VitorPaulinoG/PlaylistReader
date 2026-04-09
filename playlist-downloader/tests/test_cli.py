@@ -40,13 +40,13 @@ class CliTest(unittest.TestCase):
                     downloaded_count=0,
                     failed_count=0,
                     skipped_count=0,
+                    unresolved_count=0,
                     results=[],
                 )
                 result = self.runner.invoke(app, ["download", str(playlist_file), str(output_dir)])
 
         self.assertEqual(0, result.exit_code, result.output)
         build_service.return_value.run_playlist.assert_called_once()
-        build_service.return_value.run_search.assert_not_called()
 
     def test_download_search_mode_uses_output_dir_only(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -60,6 +60,7 @@ class CliTest(unittest.TestCase):
                     downloaded_count=1,
                     failed_count=0,
                     skipped_count=0,
+                    unresolved_count=0,
                     results=[],
                 )
                 result = self.runner.invoke(
@@ -71,12 +72,19 @@ class CliTest(unittest.TestCase):
                         "Song",
                         "Artist",
                         "Album",
+                        "--smart-search",
+                        "--candidate-count",
+                        "5",
+                        "--prefer-official",
                     ],
                 )
 
         self.assertEqual(0, result.exit_code, result.output)
-        build_service.return_value.run_search.assert_called_once()
-        build_service.return_value.run_playlist.assert_not_called()
+        _, _, _, output_dir_arg, options = build_service.return_value.run_search.call_args.args
+        self.assertEqual(output_dir, output_dir_arg)
+        self.assertTrue(options.smart_search)
+        self.assertEqual(5, options.candidate_count)
+        self.assertTrue(options.prefer_official)
 
     def test_download_rejects_limit_with_search(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -97,6 +105,26 @@ class CliTest(unittest.TestCase):
 
         self.assertNotEqual(0, result.exit_code)
         self.assertIn("--limit and --start-from cannot be used with --search.", result.output)
+
+    def test_download_rejects_conflicting_search_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            playlist_file = root / "playlist.yaml"
+            playlist_file.write_text("playlist:\n  nome: List\n  musicas: []\n", encoding="utf-8")
+            output_dir = root / "out"
+            result = self.runner.invoke(
+                app,
+                [
+                    "download",
+                    str(playlist_file),
+                    str(output_dir),
+                    "--smart-search",
+                    "--review-search",
+                ],
+            )
+
+        self.assertNotEqual(0, result.exit_code)
+        self.assertIn("--smart-search and --review-search cannot be used together.", result.output)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from playlist_downloader.metadata import Id3MetadataWriter
 from playlist_downloader.reporters import RichDownloadReporter
 from playlist_downloader.skipped_tracks import SkippedTracksWriter
 from playlist_downloader.services import DownloadOptions, PlaylistDownloadService
+from playlist_downloader.unresolved_tracks import UnresolvedTracksWriter
 from playlist_downloader.yaml_parser import YamlPlaylistParser
 
 app = typer.Typer(
@@ -31,6 +32,7 @@ def _build_service(verbose: bool, show_url: bool) -> PlaylistDownloadService:
         metadata_writer=Id3MetadataWriter(),
         reporter=RichDownloadReporter(verbose=verbose, show_url=show_url),
         skipped_tracks_writer=SkippedTracksWriter(),
+        unresolved_tracks_writer=UnresolvedTracksWriter(),
     )
 
 
@@ -40,11 +42,19 @@ def _build_options(
     limit: int | None,
     start_from: int,
     show_url: bool,
+    smart_search: bool,
+    review_search: bool,
+    candidate_count: int,
+    prefer_official: bool,
 ) -> DownloadOptions:
     if limit is not None and limit <= 0:
         raise typer.BadParameter("--limit must be greater than zero.")
     if start_from < 0:
         raise typer.BadParameter("--start-from must be zero or greater.")
+    if candidate_count <= 0:
+        raise typer.BadParameter("--candidate-count must be greater than zero.")
+    if smart_search and review_search:
+        raise typer.BadParameter("--smart-search and --review-search cannot be used together.")
 
     return DownloadOptions(
         overwrite=overwrite,
@@ -52,6 +62,10 @@ def _build_options(
         limit=limit,
         start_from=start_from,
         show_url=show_url,
+        smart_search=smart_search,
+        review_search=review_search,
+        candidate_count=candidate_count,
+        prefer_official=prefer_official,
     )
 
 
@@ -103,6 +117,22 @@ def download(
         bool,
         typer.Option("--show-url", help="Show the resolved source URL in the final summary."),
     ] = False,
+    smart_search: Annotated[
+        bool,
+        typer.Option("--smart-search", help="Inspect multiple search results and auto-pick the best match."),
+    ] = False,
+    review_search: Annotated[
+        bool,
+        typer.Option("--review-search", help="Review search candidates interactively before downloading."),
+    ] = False,
+    candidate_count: Annotated[
+        int,
+        typer.Option("--candidate-count", min=1, help="Number of search candidates to inspect."),
+    ] = 10,
+    prefer_official: Annotated[
+        bool,
+        typer.Option("--prefer-official", help="Prefer candidates that look like official or auto-generated releases."),
+    ] = False,
     search: Annotated[
         tuple[str, str, str] | None,
         typer.Option(
@@ -125,6 +155,10 @@ def download(
         limit=limit,
         start_from=start_from,
         show_url=show_url,
+        smart_search=smart_search,
+        review_search=review_search,
+        candidate_count=candidate_count,
+        prefer_official=prefer_official,
     )
 
     if search is None:

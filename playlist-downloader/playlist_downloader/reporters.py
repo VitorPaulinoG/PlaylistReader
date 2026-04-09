@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 from rich.console import Console
 from rich.table import Table
 
 from playlist_downloader.downloader import DownloadArtifact
 from playlist_downloader.models import Track
+from playlist_downloader.search_resolution import ScoredCandidate
 from playlist_downloader.services import DownloadSummary
 
 
@@ -36,7 +38,7 @@ class RichDownloadReporter:
     ) -> None:
         if not self.verbose:
             return
-        self.console.print(f"  Saved: {artifact.filepath.name}")
+        self.console.print(f"  Saved: {artifact.filepath.name if artifact.filepath else 'n/a'}")
 
     def on_track_skipped(
         self,
@@ -46,11 +48,48 @@ class RichDownloadReporter:
         artifact: DownloadArtifact,
     ) -> None:
         self.console.print(
-            f"[yellow]Skipped[/yellow] [{index}/{total_tracks}] {track.titulo_exibicao}: {artifact.filepath.name}"
+            f"[yellow]Skipped[/yellow] [{index}/{total_tracks}] {track.titulo_exibicao}: {artifact.filepath.name if artifact.filepath else 'existing file'}"
         )
 
     def on_track_failure(self, index: int, total_tracks: int, track: Track, error: str) -> None:
         self.console.print(f"[red]Error[/red] [{index}/{total_tracks}] {track.titulo_exibicao}: {error}")
+
+    def on_track_unresolved(self, index: int, total_tracks: int, track: Track, message: str) -> None:
+        self.console.print(f"[yellow]Unresolved[/yellow] [{index}/{total_tracks}] {track.titulo_exibicao}: {message}")
+
+    def review_candidate(
+        self,
+        track: Track,
+        candidate_index: int,
+        total_candidates: int,
+        scored_candidate: ScoredCandidate,
+    ) -> Literal["download", "next", "skip", "abort"]:
+        candidate = scored_candidate.candidate
+        self.console.print(
+            f"[bold]Candidate {candidate_index}/{total_candidates}[/bold] for {track.titulo_exibicao}"
+        )
+        table = Table()
+        table.add_column("Field")
+        table.add_column("Value")
+        table.add_row("Title", candidate.title)
+        table.add_row("Channel", candidate.channel or candidate.uploader or "n/a")
+        table.add_row("Duration", str(candidate.duration) if candidate.duration is not None else "n/a")
+        table.add_row("URL", candidate.webpage_url)
+        table.add_row("Score", str(scored_candidate.score))
+        table.add_row("Reasons", ", ".join(scored_candidate.reasons) or "n/a")
+        self.console.print(table)
+
+        while True:
+            response = self.console.input("[bold]Action[/bold] [y=download/n=next/s=skip/q=abort]: ").strip().lower()
+            if response == "y":
+                return "download"
+            if response == "n":
+                return "next"
+            if response == "s":
+                return "skip"
+            if response == "q":
+                return "abort"
+            self.console.print("Invalid action. Use y, n, s, or q.")
 
     def on_collection_finished(self, summary: DownloadSummary) -> None:
         table = Table(title="Download Summary")
@@ -62,11 +101,16 @@ class RichDownloadReporter:
         table.add_row("Downloaded", str(summary.downloaded_count))
         table.add_row("Failed", str(summary.failed_count))
         table.add_row("Skipped", str(summary.skipped_count))
+        table.add_row("Unresolved", str(summary.unresolved_count))
         self.console.print(table)
 
         if summary.skipped_manifest_path is not None:
             self.console.print(
                 f"[bold]Skipped manifest:[/bold] {summary.skipped_manifest_path}"
+            )
+        if summary.unresolved_manifest_path is not None:
+            self.console.print(
+                f"[bold]Unresolved manifest:[/bold] {summary.unresolved_manifest_path}"
             )
 
         if not self.show_url:

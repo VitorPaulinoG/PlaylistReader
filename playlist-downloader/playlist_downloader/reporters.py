@@ -78,9 +78,14 @@ class RichDownloadReporter:
         table.add_row("Score", str(scored_candidate.score))
         table.add_row("Reasons", ", ".join(scored_candidate.reasons) or "n/a")
         self.console.print(table)
+        self.console.print("Actions:")
+        self.console.print("  y = download current candidate")
+        self.console.print("  n = next candidate")
+        self.console.print("  s = skip this track")
+        self.console.print("  q = abort the command")
 
         while True:
-            response = self.console.input("[bold]Action[/bold] [y=download/n=next/s=skip/q=abort]: ").strip().lower()
+            response = self.console.input("[bold]Action[/bold]: ").strip().lower()
             if response == "y":
                 return "download"
             if response == "n":

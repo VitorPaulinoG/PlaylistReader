@@ -220,6 +220,14 @@
     return `${m}:${String(sec).padStart(2, "0")}`;
   }
 
+  function isTrackDuplicate(nome, artistas, album, seenTracks) {
+    if (!nome) return true; // Treat empty nome as duplicate to skip
+    const trackKey = nome + "|" + artistas.join(",") + "|" + album;
+    if (seenTracks.has(trackKey)) return true;
+    seenTracks.add(trackKey);
+    return false;
+  }
+
   function fixPositions() {
     accumulatedTracks.forEach((t, i) => { t.posicao = i + 1; });
   }
@@ -252,9 +260,7 @@
         const link = row.querySelector('[data-testid="internal-track-link"]');
         if (!link) continue;
         const nome = link.textContent.trim();
-        if (!nome || seenTracks.has(nome)) continue;
-        seenTracks.add(nome);
-        newCount++;
+        if (!nome) continue;
 
         let artistas = [];
         const artistLinks = row.querySelectorAll('a[href*="/artist/"]');
@@ -267,6 +273,9 @@
         let album = "Desconhecido";
         const albumLink = row.querySelector('a[href*="/album/"]');
         if (albumLink) album = albumLink.textContent.trim();
+
+        if (isTrackDuplicate(nome, artistas, album, seenTracks)) continue;
+        newCount++;
 
         let dataLanc = "Desconhecida";
         const col4 = row.querySelector('[aria-colindex="4"]');
@@ -309,8 +318,7 @@
       const link = row.querySelector('[data-testid="internal-track-link"]');
       if (!link) continue;
       const nome = link.textContent.trim();
-      if (!nome || seenTracks.has(nome)) continue;
-      seenTracks.add(nome);
+      if (!nome) continue;
 
       let artistas = [];
       const artistLinks = row.querySelectorAll('a[href*="/artist/"]');
@@ -323,6 +331,8 @@
       let album = "Desconhecido";
       const albumLink = row.querySelector('a[href*="/album/"]');
       if (albumLink) album = albumLink.textContent.trim();
+
+      if (isTrackDuplicate(nome, artistas, album, seenTracks)) continue;
 
       let dataLanc = "Desconhecida";
       const col4 = row.querySelector('[aria-colindex="4"]');

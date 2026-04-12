@@ -72,15 +72,15 @@ class CliTest(unittest.TestCase):
                         "Song",
                         "Artist",
                         "Album",
+                        "10",
                         "--smart-search",
                         "--candidate-count",
                         "5",
                         "--prefer-official",
                     ],
                 )
-
         self.assertEqual(0, result.exit_code, result.output)
-        _, _, _, output_dir_arg, options = build_service.return_value.run_search.call_args.args
+        _, _, _, _, output_dir_arg, options = build_service.return_value.run_search.call_args.args
         self.assertEqual(output_dir, output_dir_arg)
         self.assertTrue(options.smart_search)
         self.assertEqual(5, options.candidate_count)
@@ -98,6 +98,7 @@ class CliTest(unittest.TestCase):
                     "Song",
                     "Artist",
                     "Album",
+                    "10",
                     "--limit",
                     "1",
                 ],

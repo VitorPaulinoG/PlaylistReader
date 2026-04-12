@@ -69,7 +69,7 @@ def _build_options(
     )
 
 
-def _resolve_paths(paths: list[str], search: tuple[str, str, str] | None) -> tuple[Path | None, Path]:
+def _resolve_paths(paths: list[str], search: tuple[str, str, str, int] | None) -> tuple[Path | None, Path]:
     if search is None:
         if len(paths) != 2:
             raise typer.BadParameter(
@@ -134,11 +134,11 @@ def download(
         typer.Option("--prefer-official", help="Prefer candidates that look like official or auto-generated releases."),
     ] = False,
     search: Annotated[
-        tuple[str, str, str] | None,
+        tuple[str, str, str, int] | None,
         typer.Option(
             "--search",
-            help="Download a single track using TITLE ARTIST ALBUM instead of a playlist file.",
-            metavar="TITLE ARTIST ALBUM",
+            help="Download a single track using TITLE ARTIST ALBUM POSITION instead of a playlist file.",
+            metavar="TITLE ARTIST ALBUM POSITION",
         ),
     ] = None,
 ) -> None:
@@ -164,12 +164,10 @@ def download(
     if search is None:
         summary = service.run_playlist(playlist_file, output_dir, options)
     else:
-        title, artist, album = search
-        summary = service.run_search(title, artist, album, output_dir, options)
-
+        title, artist, album, position = search
+        summary = service.run_search(title, artist, album, position, output_dir, options)
     if summary.failed_count:
         raise typer.Exit(code=4)
-
 
 def main() -> None:
     app()

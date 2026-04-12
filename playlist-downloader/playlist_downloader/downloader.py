@@ -22,7 +22,9 @@ class DownloadArtifact:
 
 
 def build_search_query(track: Track) -> str:
-    return ", ".join(track.search_terms())
+    search_terms: list[str] = track.search_terms()
+    search_terms[0] = "\"{}\"".format(search_terms[0])
+    return " - ".join(track.search_terms())
 
 
 def sanitize_filename(name: str) -> str:

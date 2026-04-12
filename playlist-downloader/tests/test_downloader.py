@@ -22,7 +22,7 @@ class DownloaderTest(unittest.TestCase):
         query = build_search_query(track)
 
         self.assertEqual(
-            "Quando Eu Me Chamar Saudade, Nelson Cavaquinho, Serie Documento - Nelson Cavaquinho",
+            "Quando Eu Me Chamar Saudade - Nelson Cavaquinho - Serie Documento - Nelson Cavaquinho",
             query,
         )
 

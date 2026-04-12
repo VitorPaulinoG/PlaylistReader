@@ -156,6 +156,7 @@ class PlaylistDownloadServiceTest(unittest.TestCase):
                 "Song",
                 "Artist",
                 "Album",
+                10,
                 Path(temp_dir),
                 DownloadOptions(smart_search=True, candidate_count=10, prefer_official=True),
             )
@@ -230,6 +231,7 @@ class PlaylistDownloadServiceTest(unittest.TestCase):
                 "Song",
                 "Artist",
                 "Album",
+                10,
                 Path(temp_dir),
                 DownloadOptions(review_search=True),
             )

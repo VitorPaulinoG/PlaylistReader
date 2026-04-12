@@ -107,12 +107,13 @@ class PlaylistDownloadService:
             output_dir=output_dir,
             options=options,
         )
-
+    
     def run_search(
         self,
         title: str,
         artist: str,
         album: str,
+        position: int,
         output_dir: Path,
         options: DownloadOptions,
     ) -> DownloadSummary:
@@ -120,7 +121,7 @@ class PlaylistDownloadService:
             nome=title,
             artistas=[artist],
             album=album,
-            posicao=1,
+            posicao=position,
         )
         return self._run_collection(
             label=track.titulo_exibicao,

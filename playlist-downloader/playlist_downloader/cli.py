@@ -11,6 +11,7 @@ from playlist_downloader.reporters import RichDownloadReporter
 from playlist_downloader.skipped_tracks import SkippedTracksWriter
 from playlist_downloader.services import DownloadOptions, PlaylistDownloadService
 from playlist_downloader.unresolved_tracks import UnresolvedTracksWriter
+from playlist_downloader.failed_tracks import FailedTracksWriter
 from playlist_downloader.yaml_parser import YamlPlaylistParser
 
 app = typer.Typer(
@@ -33,6 +34,7 @@ def _build_service(verbose: bool, show_url: bool) -> PlaylistDownloadService:
         reporter=RichDownloadReporter(verbose=verbose, show_url=show_url),
         skipped_tracks_writer=SkippedTracksWriter(),
         unresolved_tracks_writer=UnresolvedTracksWriter(),
+        failed_tracks_writer=FailedTracksWriter(),
     )
 
 

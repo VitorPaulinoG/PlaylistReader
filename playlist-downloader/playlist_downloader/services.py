@@ -9,6 +9,7 @@ from playlist_downloader.models import Playlist, Track
 from playlist_downloader.search_resolution import ScoredCandidate, SearchCandidate, choose_best_candidate, rank_candidates
 from playlist_downloader.skipped_tracks import SkippedTracksWriter
 from playlist_downloader.unresolved_tracks import UnresolvedTracksWriter
+from playlist_downloader.failed_tracks import FailedTracksWriter
 
 
 class PlaylistParser(Protocol):
@@ -86,6 +87,7 @@ class DownloadSummary:
     results: list[TrackDownloadResult] = field(default_factory=list)
     skipped_manifest_path: Path | None = None
     unresolved_manifest_path: Path | None = None
+    failed_manifest_path: Path | None = None
 
 
 @dataclass(slots=True)
@@ -96,6 +98,7 @@ class PlaylistDownloadService:
     reporter: DownloadReporter
     skipped_tracks_writer: SkippedTracksWriter | None = None
     unresolved_tracks_writer: UnresolvedTracksWriter | None = None
+    failed_tracks_writer: FailedTracksWriter | None = None
 
     def run_playlist(self, yaml_path: Path, output_dir: Path, options: DownloadOptions) -> DownloadSummary:
         playlist = self.parser.parse(yaml_path)
@@ -159,6 +162,8 @@ class PlaylistDownloadService:
 
         skipped_tracks = [result.track for result in results if result.skipped]
         unresolved_tracks = [result.track for result in results if result.unresolved]
+        failed_tracks = [result.track for result in results if not result.success and not result.unresolved]
+
         summary = DownloadSummary(
             label=label,
             mode=mode,
@@ -173,6 +178,9 @@ class PlaylistDownloadService:
             else None,
             unresolved_manifest_path=self.unresolved_tracks_writer.write(output_dir, label, unresolved_tracks)
             if self.unresolved_tracks_writer is not None
+            else None,
+            failed_manifest_path=self.failed_tracks_writer.write(output_dir, label, failed_tracks)
+            if self.failed_tracks_writer is not None
             else None,
         )
         self.reporter.on_collection_finished(summary)

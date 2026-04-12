@@ -117,7 +117,10 @@ class RichDownloadReporter:
             self.console.print(
                 f"[bold]Unresolved manifest:[/bold] {summary.unresolved_manifest_path}"
             )
-
+        if summary.failed_manifest_path is not None:
+            self.console.print(
+                f"[bold]Failed manifest:[/bold] {summary.failed_manifest_path}"
+            )
         if not self.show_url:
             return
 

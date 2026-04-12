@@ -113,6 +113,7 @@ playlist:
 - Skipped tracks are exported to `OUTPUT_DIR/.playlist-downloader/skipped/<playlist-name>-NNN.skipped.yaml`.
 - The numeric suffix is sequential, for example `Clássicos Melódicos BR-001.skipped.yaml`.
 - Tracks that do not meet the smart-search requirements are exported to `OUTPUT_DIR/.playlist-downloader/unresolved/<playlist-name>-NNN.unresolved.yaml`.
+- Tracks that fail on download are exported to `OUTPUT_DIR/.playlist-downloader/failed/<playlist-name>-NNN.failed.yaml`.
 - Without `--verbose`, the CLI stays mostly quiet and always prints a final summary.
 - With `--show-url`, resolved URLs are listed in the final summary.
 

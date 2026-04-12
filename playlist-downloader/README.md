@@ -49,13 +49,13 @@ playlist-downloader download ../context/example.yaml /tmp/playlist-reader-smoke 
 Download a single track without a YAML file:
 
 ```bash
-playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho"
+playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho" "1"
 ```
 
 Review candidates interactively before downloading:
 
 ```bash
-playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho" --review-search
+playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho" "1" --review-search
 ```
 
 ## Options
@@ -69,7 +69,7 @@ playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final"
 - `--review-search`: inspect candidates interactively before downloading
 - `--candidate-count INT`: number of candidates to inspect in smart or review search
 - `--prefer-official`: boost candidates that look like official or auto-generated releases
-- `--search TITLE ARTIST ALBUM`: download a single manually specified track
+- `--search TITLE ARTIST ALBUM POSITION`: download a single manually specified track
 
 `--limit` and `--start-from` are only valid in playlist mode.
 When a target file already exists and `--overwrite` is not set, the track is skipped.

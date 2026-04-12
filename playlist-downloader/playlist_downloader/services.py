@@ -173,7 +173,7 @@ class PlaylistDownloadService:
             skipped_count=len(skipped_tracks),
             unresolved_count=len(unresolved_tracks),
             results=results,
-            skipped_manifest_path=self.skipped_tracks_writer.write(output_dir, label, Path(label), skipped_tracks)
+            skipped_manifest_path=self.skipped_tracks_writer.write(output_dir, label, skipped_tracks)
             if self.skipped_tracks_writer is not None
             else None,
             unresolved_manifest_path=self.unresolved_tracks_writer.write(output_dir, label, unresolved_tracks)

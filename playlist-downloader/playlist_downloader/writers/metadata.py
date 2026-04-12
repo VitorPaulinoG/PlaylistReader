@@ -5,7 +5,7 @@ from pathlib import Path
 
 from mutagen.id3 import ID3, ID3NoHeaderError, TALB, TIT2, TPE1, TRCK
 
-from playlist_downloader.models import Track
+from playlist_downloader.models.playlist import Track
 
 
 @dataclass(slots=True)

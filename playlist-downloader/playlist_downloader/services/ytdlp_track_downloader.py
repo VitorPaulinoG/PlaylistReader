@@ -6,19 +6,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from playlist_downloader.models import Track
-from playlist_downloader.search_resolution import SearchCandidate
+from playlist_downloader.models.playlist import Track
+from playlist_downloader.models.search_candidate import SearchCandidate
+from playlist_downloader.errors.download_error import DownloadError
+from playlist_downloader.models.download_artifact import DownloadArtifact
 
-
-class DownloadError(Exception):
-    pass
-
-
-@dataclass(frozen=True, slots=True)
-class DownloadArtifact:
-    filepath: Path | None
-    source_url: str | None = None
-    skipped: bool = False
 
 
 def build_search_query(track: Track) -> str:

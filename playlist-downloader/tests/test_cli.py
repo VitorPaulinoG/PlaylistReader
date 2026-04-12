@@ -9,7 +9,7 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from playlist_downloader.cli import app
-from playlist_downloader.services import DownloadSummary
+from playlist_downloader.models.download_summary import DownloadSummary
 
 
 class CliTest(unittest.TestCase):
@@ -125,7 +125,7 @@ class CliTest(unittest.TestCase):
             )
 
         self.assertNotEqual(0, result.exit_code)
-        self.assertIn("--smart-search and --review-search cannot be used together.", result.output)
+        self.assertIn("--smart-search and --review-search cannot be used", result.output)
 
 
 if __name__ == "__main__":

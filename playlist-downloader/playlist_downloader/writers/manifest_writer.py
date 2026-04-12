@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from playlist_downloader.models import Track
+from playlist_downloader.models.playlist import Track
 
 
 @dataclass(slots=True)

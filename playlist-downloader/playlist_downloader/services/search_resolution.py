@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import re
-import unicodedata
-from dataclasses import dataclass, field
-
-from playlist_downloader.models import Track
+from playlist_downloader.models.playlist import Track
+from playlist_downloader.models.search_candidate import SearchCandidate
+from playlist_downloader.models.scored_candidate import ScoredCandidate
+from playlist_downloader.utils.text_utils import normalize_text
+from playlist_downloader.utils.time_utils import parse_duration_seconds
 
 NEGATIVE_TERMS = {
     "analysis",
@@ -29,49 +29,6 @@ OFFICIAL_TERMS = {
     "provided to youtube",
     "topic",
 }
-
-
-@dataclass(frozen=True, slots=True)
-class SearchCandidate:
-    title: str
-    webpage_url: str
-    channel: str = ""
-    uploader: str = ""
-    duration: int | None = None
-    album: str = ""
-    artist: str = ""
-    video_id: str = ""
-    raw_data: dict = field(default_factory=dict)
-
-
-@dataclass(frozen=True, slots=True)
-class ScoredCandidate:
-    candidate: SearchCandidate
-    score: int
-    reasons: list[str]
-    title_match: bool
-
-
-def normalize_text(value: str) -> str:
-    normalized = unicodedata.normalize("NFKD", value)
-    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
-    lowered = ascii_text.lower()
-    cleaned = re.sub(r"[^a-z0-9\s]", " ", lowered)
-    collapsed = re.sub(r"\s+", " ", cleaned).strip()
-    return collapsed
-
-
-def parse_duration_seconds(value: str) -> int | None:
-    if not value or ":" not in value:
-        return None
-    parts = value.split(":")
-    if not all(part.isdigit() for part in parts):
-        return None
-    total = 0
-    for part in parts:
-        total = (total * 60) + int(part)
-    return total
-
 
 def score_candidate(track: Track, candidate: SearchCandidate, prefer_official: bool) -> ScoredCandidate:
     reasons: list[str] = []

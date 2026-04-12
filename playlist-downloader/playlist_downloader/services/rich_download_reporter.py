@@ -6,10 +6,10 @@ from typing import Literal
 from rich.console import Console
 from rich.table import Table
 
-from playlist_downloader.downloader import DownloadArtifact
-from playlist_downloader.models import Track
-from playlist_downloader.search_resolution import ScoredCandidate
-from playlist_downloader.services import DownloadSummary
+from playlist_downloader.models.download_artifact import DownloadArtifact
+from playlist_downloader.models.playlist import Track
+from playlist_downloader.models.scored_candidate import ScoredCandidate
+from playlist_downloader.models.download_summary import DownloadSummary
 
 
 @dataclass(slots=True)

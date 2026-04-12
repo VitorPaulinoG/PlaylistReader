@@ -5,7 +5,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from playlist_downloader.yaml_parser import YamlPlaylistParser
+from playlist_downloader.parsers.yaml_parser import YamlPlaylistParser
 
 
 class YamlPlaylistParserTest(unittest.TestCase):

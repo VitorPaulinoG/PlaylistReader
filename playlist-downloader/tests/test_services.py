@@ -6,12 +6,14 @@ from pathlib import Path
 
 import yaml
 
-from playlist_downloader.downloader import DownloadArtifact, DownloadError
-from playlist_downloader.models import Playlist, Track
-from playlist_downloader.search_resolution import SearchCandidate
-from playlist_downloader.services import DownloadOptions, PlaylistDownloadService
-from playlist_downloader.skipped_tracks import SkippedTracksWriter
-from playlist_downloader.unresolved_tracks import UnresolvedTracksWriter
+from playlist_downloader.models.download_artifact import DownloadArtifact
+from playlist_downloader.models.download_options import DownloadOptions
+from playlist_downloader.models.playlist import Playlist, Track
+from playlist_downloader.models.search_candidate import SearchCandidate
+from playlist_downloader.services.playlist_download_service import PlaylistDownloadService
+from playlist_downloader.writers.skipped_tracks import SkippedTracksWriter
+from playlist_downloader.writers.unresolved_tracks import UnresolvedTracksWriter
+from playlist_downloader.errors.download_error import DownloadError
 
 
 class FakeParser:

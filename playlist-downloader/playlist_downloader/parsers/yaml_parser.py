@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from playlist_downloader.models import Playlist, Track
+from playlist_downloader.models.playlist import Playlist, Track
 
 
 class YamlPlaylistParser:

@@ -5,14 +5,15 @@ from typing import Annotated
 
 import typer
 
-from playlist_downloader.downloader import YtDlpTrackDownloader
-from playlist_downloader.metadata import Id3MetadataWriter
-from playlist_downloader.reporters import RichDownloadReporter
-from playlist_downloader.skipped_tracks import SkippedTracksWriter
-from playlist_downloader.services import DownloadOptions, PlaylistDownloadService
-from playlist_downloader.unresolved_tracks import UnresolvedTracksWriter
-from playlist_downloader.failed_tracks import FailedTracksWriter
-from playlist_downloader.yaml_parser import YamlPlaylistParser
+from playlist_downloader.services.ytdlp_track_downloader import YtDlpTrackDownloader
+from playlist_downloader.writers.metadata import Id3MetadataWriter
+from playlist_downloader.services.rich_download_reporter import RichDownloadReporter
+from playlist_downloader.services.playlist_download_service import PlaylistDownloadService
+from playlist_downloader.writers.skipped_tracks import SkippedTracksWriter
+from playlist_downloader.writers.unresolved_tracks import UnresolvedTracksWriter
+from playlist_downloader.writers.failed_tracks import FailedTracksWriter
+from playlist_downloader.parsers.yaml_parser import YamlPlaylistParser
+from playlist_downloader.models.download_options import DownloadOptions
 
 app = typer.Typer(
     add_completion=False,

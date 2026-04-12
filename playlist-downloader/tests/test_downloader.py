@@ -7,8 +7,8 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from unittest.mock import patch
 
-from playlist_downloader.downloader import YtDlpTrackDownloader, build_search_query
-from playlist_downloader.models import Track
+from playlist_downloader.services.ytdlp_track_downloader import YtDlpTrackDownloader, build_search_query
+from playlist_downloader.models.playlist import Track
 
 
 class DownloaderTest(unittest.TestCase):
@@ -52,7 +52,7 @@ class DownloaderTest(unittest.TestCase):
             ]
         )
         with patch(
-            "playlist_downloader.downloader.subprocess.run",
+            "playlist_downloader.services.ytdlp_track_downloader.subprocess.run",
             return_value=CompletedProcess(args=[], returncode=0, stdout=stdout, stderr=""),
         ):
             candidates = downloader.search_candidates(track, 2)
@@ -79,7 +79,7 @@ class DownloaderTest(unittest.TestCase):
                 stderr="",
             )
 
-            with patch("playlist_downloader.downloader.subprocess.run", return_value=completed_process):
+            with patch("playlist_downloader.services.ytdlp_track_downloader.subprocess.run", return_value=completed_process):
                 result = downloader.download_candidate(
                     track=track,
                     candidate=type("Candidate", (), {"webpage_url": "https://youtube.test/watch?v=123"})(),
@@ -100,7 +100,7 @@ class DownloaderTest(unittest.TestCase):
             destination = output_dir / "Faixa - Artista.mp3"
             destination.write_bytes(b"existing")
 
-            with patch("playlist_downloader.downloader.subprocess.run") as run_mock:
+            with patch("playlist_downloader.services.ytdlp_track_downloader.subprocess.run") as run_mock:
                 result = downloader.download(track, output_dir, overwrite=False)
 
         self.assertEqual(destination, result.filepath)

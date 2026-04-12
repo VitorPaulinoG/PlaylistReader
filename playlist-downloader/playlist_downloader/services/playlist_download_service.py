@@ -1,94 +1,23 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Protocol
 
-from playlist_downloader.downloader import DownloadArtifact, DownloadError
-from playlist_downloader.models import Playlist, Track
-from playlist_downloader.search_resolution import ScoredCandidate, SearchCandidate, choose_best_candidate, rank_candidates
-from playlist_downloader.skipped_tracks import SkippedTracksWriter
-from playlist_downloader.unresolved_tracks import UnresolvedTracksWriter
-from playlist_downloader.failed_tracks import FailedTracksWriter
-
-
-class PlaylistParser(Protocol):
-    def parse(self, path: Path) -> Playlist: ...
-
-
-class TrackDownloader(Protocol):
-    def download(self, track: Track, output_dir: Path, overwrite: bool = False) -> DownloadArtifact: ...
-    def search_candidates(self, track: Track, candidate_count: int) -> list[SearchCandidate]: ...
-    def download_candidate(
-        self,
-        track: Track,
-        candidate: SearchCandidate,
-        output_dir: Path,
-        overwrite: bool = False,
-    ) -> DownloadArtifact: ...
-
-
-class MetadataWriter(Protocol):
-    def write(self, filepath: Path, track: Track) -> None: ...
-
-
-class DownloadReporter(Protocol):
-    def on_collection_start(self, label: str, total_tracks: int) -> None: ...
-    def on_track_start(self, index: int, total_tracks: int, track: Track) -> None: ...
-    def on_track_skipped(self, index: int, total_tracks: int, track: Track, artifact: DownloadArtifact) -> None: ...
-    def on_track_success(self, index: int, total_tracks: int, track: Track, artifact: DownloadArtifact) -> None: ...
-    def on_track_failure(self, index: int, total_tracks: int, track: Track, error: str) -> None: ...
-    def on_track_unresolved(self, index: int, total_tracks: int, track: Track, message: str) -> None: ...
-    def review_candidate(
-        self,
-        track: Track,
-        candidate_index: int,
-        total_candidates: int,
-        scored_candidate: ScoredCandidate,
-    ) -> Literal["download", "next", "skip", "abort"]: ...
-    def on_collection_finished(self, summary: "DownloadSummary") -> None: ...
-
-
-@dataclass(frozen=True, slots=True)
-class DownloadOptions:
-    overwrite: bool = False
-    verbose: bool = False
-    limit: int | None = None
-    start_from: int = 0
-    show_url: bool = False
-    smart_search: bool = False
-    review_search: bool = False
-    candidate_count: int = 10
-    prefer_official: bool = False
-
-
-@dataclass(frozen=True, slots=True)
-class TrackDownloadResult:
-    track: Track
-    index: int
-    total_tracks: int
-    success: bool
-    skipped: bool = False
-    unresolved: bool = False
-    output_path: Path | None = None
-    source_url: str | None = None
-    error: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class DownloadSummary:
-    label: str
-    mode: str
-    total_tracks: int
-    downloaded_count: int
-    failed_count: int
-    skipped_count: int
-    unresolved_count: int
-    results: list[TrackDownloadResult] = field(default_factory=list)
-    skipped_manifest_path: Path | None = None
-    unresolved_manifest_path: Path | None = None
-    failed_manifest_path: Path | None = None
-
+from playlist_downloader.models.download_artifact import DownloadArtifact
+from playlist_downloader.models.track_download_result import TrackDownloadResult
+from playlist_downloader.models.download_options import DownloadOptions
+from playlist_downloader.models.download_summary import DownloadSummary
+from playlist_downloader.models.playlist import Track
+from playlist_downloader.models.search_candidate import SearchCandidate
+from playlist_downloader.errors.download_error import DownloadError
+from playlist_downloader.services.search_resolution import choose_best_candidate, rank_candidates
+from playlist_downloader.writers.metadata_writer import MetadataWriter
+from playlist_downloader.writers.skipped_tracks import SkippedTracksWriter
+from playlist_downloader.writers.unresolved_tracks import UnresolvedTracksWriter
+from playlist_downloader.writers.failed_tracks import FailedTracksWriter
+from playlist_downloader.parsers.playlist_parser import PlaylistParser
+from playlist_downloader.services.track_downloader import TrackDownloader
+from playlist_downloader.services.download_reporter import DownloadReporter
 
 @dataclass(slots=True)
 class PlaylistDownloadService:

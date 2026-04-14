@@ -11,8 +11,8 @@ from playlist_downloader.models.download_options import DownloadOptions
 from playlist_downloader.models.playlist import Playlist, Track
 from playlist_downloader.models.search_candidate import SearchCandidate
 from playlist_downloader.services.playlist_download_service import PlaylistDownloadService
-from playlist_downloader.writers.skipped_tracks import SkippedTracksWriter
-from playlist_downloader.writers.unresolved_tracks import UnresolvedTracksWriter
+from playlist_downloader.services.writers.skipped_tracks import SkippedTracksWriter
+from playlist_downloader.services.writers.unresolved_tracks import UnresolvedTracksWriter
 from playlist_downloader.errors.download_error import DownloadError
 
 

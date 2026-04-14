@@ -7,7 +7,7 @@ from pathlib import Path
 from subprocess import CompletedProcess
 from unittest.mock import patch
 
-from playlist_downloader.services.ytdlp_track_downloader import YtDlpTrackDownloader, build_search_query
+from playlist_downloader.services.downloaders.ytdlp_track_downloader import YtDlpTrackDownloader, build_search_query
 from playlist_downloader.models.playlist import Track
 
 

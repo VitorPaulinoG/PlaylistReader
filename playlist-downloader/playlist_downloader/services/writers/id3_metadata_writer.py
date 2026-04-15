@@ -26,7 +26,3 @@ class Id3MetadataWriter:
             tags = ID3()
             tags.save(str(filepath))
             return ID3(str(filepath))
-
-
-def set_metadata(filepath: Path, track: Track) -> None:
-    Id3MetadataWriter().write(filepath, track)

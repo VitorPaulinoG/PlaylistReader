@@ -15,7 +15,7 @@ from playlist_downloader.services.metadata_writer import MetadataWriter
 from playlist_downloader.services.writers.skipped_tracks import SkippedTracksWriter
 from playlist_downloader.services.writers.unresolved_tracks import UnresolvedTracksWriter
 from playlist_downloader.services.writers.failed_tracks import FailedTracksWriter
-from playlist_downloader.parsers.playlist_parser import PlaylistParser
+from playlist_downloader.services.playlist_parser import PlaylistParser
 from playlist_downloader.services.track_downloader import TrackDownloader
 from playlist_downloader.services.download_reporter import DownloadReporter
 

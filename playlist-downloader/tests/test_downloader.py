@@ -61,6 +61,45 @@ class DownloaderTest(unittest.TestCase):
         self.assertEqual("Song - Artist", candidates[0].title)
         self.assertEqual("https://www.youtube.com/watch?v=def", candidates[1].webpage_url)
 
+    def test_search_candidates_keeps_valid_stdout_when_yt_dlp_returns_non_zero(self) -> None:
+        track = Track(nome="Song", artistas=["Artist"], album="Album")
+        downloader = YtDlpTrackDownloader(python_executable="python-test")
+        stdout = json.dumps(
+            {
+                "id": "abc",
+                "title": "Song - Artist",
+                "channel": "Artist - Topic",
+                "duration": 180,
+                "webpage_url": "https://www.youtube.com/watch?v=abc",
+            }
+        )
+        stderr = "ERROR: restricted candidate"
+        with patch(
+            "playlist_downloader.services.downloaders.ytdlp_track_downloader.subprocess.run",
+            return_value=CompletedProcess(args=[], returncode=1, stdout=stdout, stderr=stderr),
+        ):
+            candidates = downloader.search_candidates(track, 5)
+
+        self.assertEqual(1, len(candidates))
+        self.assertEqual("https://www.youtube.com/watch?v=abc", candidates[0].webpage_url)
+
+    def test_search_command_includes_runtime_cookie_and_error_tolerance_options(self) -> None:
+        track = Track(nome="Song", artistas=["Artist"], album="Album")
+        downloader = YtDlpTrackDownloader(
+            python_executable="python-test",
+            js_runtime="node",
+            cookies_from_browser="firefox",
+        )
+
+        command = downloader._build_search_command(track, 3)
+
+        self.assertIn("--js-runtimes", command)
+        self.assertIn("node", command)
+        self.assertIn("--cookies-from-browser", command)
+        self.assertIn("firefox", command)
+        self.assertIn("--ignore-errors", command)
+        self.assertIn("--no-abort-on-error", command)
+
     def test_download_candidate_overwrites_existing_file_when_requested(self) -> None:
         track = Track(nome="Faixa", artistas=["Artista"], album="Album", posicao=1)
         downloader = YtDlpTrackDownloader(python_executable="python-test")

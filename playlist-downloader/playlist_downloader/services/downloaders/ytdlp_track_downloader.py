@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -28,6 +30,8 @@ def sanitize_filename(name: str) -> str:
 @dataclass(slots=True)
 class YtDlpTrackDownloader:
     python_executable: str = sys.executable
+    js_runtime: str | None = None
+    cookies_from_browser: str | None = None
 
     def download(self, track: Track, output_dir: Path, overwrite: bool = False) -> DownloadArtifact:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -55,10 +59,15 @@ class YtDlpTrackDownloader:
             capture_output=True,
             text=True,
         )
+        candidates = self._extract_search_candidates(result.stdout)
+        if candidates:
+            return candidates
         if result.returncode != 0:
-            stderr = result.stderr.strip()
+            stderr = self._build_error_message(result.stderr)
             raise DownloadError(f"yt-dlp search failed for '{track.nome}': {stderr}")
-        return self._extract_search_candidates(result.stdout)
+        raise DownloadError(
+            f"yt-dlp search failed for '{track.nome}': no valid candidates were returned."
+        )
 
     def download_candidate(
         self,
@@ -97,6 +106,10 @@ class YtDlpTrackDownloader:
             self.python_executable,
             "-m",
             "yt_dlp",
+            *self._build_runtime_args(),
+            *self._build_cookie_args(),
+            "--ignore-errors",
+            "--no-abort-on-error",
             "--dump-json",
             "--no-playlist",
             f"ytsearch{candidate_count}:{build_search_query(track)}",
@@ -107,6 +120,8 @@ class YtDlpTrackDownloader:
             self.python_executable,
             "-m",
             "yt_dlp",
+            *self._build_runtime_args(),
+            *self._build_cookie_args(),
             "--extract-audio",
             "--audio-format",
             "mp3",
@@ -121,6 +136,40 @@ class YtDlpTrackDownloader:
             "after_move:filepath",
             url,
         ]
+
+    def _build_runtime_args(self) -> list[str]:
+        runtime = self.js_runtime or os.getenv("YTDLP_JS_RUNTIME") or self._detect_js_runtime()
+        if not runtime:
+            return []
+        return ["--js-runtimes", runtime]
+
+    def _build_cookie_args(self) -> list[str]:
+        browser = self.cookies_from_browser or os.getenv("YTDLP_COOKIES_FROM_BROWSER")
+        if not browser:
+            return []
+        return ["--cookies-from-browser", browser]
+
+    @staticmethod
+    def _detect_js_runtime() -> str | None:
+        for runtime in ("node", "bun", "deno"):
+            if shutil.which(runtime):
+                return runtime
+        return None
+
+    @staticmethod
+    def _build_error_message(stderr: str) -> str:
+        message = stderr.strip() or "unknown yt-dlp error"
+        if "No supported JavaScript runtime could be found" in message:
+            message += (
+                " Configure a runtime with YTDLP_JS_RUNTIME=node (or deno/bun), "
+                "or install one of these runtimes on PATH."
+            )
+        if "Sign in to confirm your age" in message:
+            message += (
+                " Configure browser cookies with YTDLP_COOKIES_FROM_BROWSER=firefox "
+                "(or another supported browser) if you need age-restricted videos."
+            )
+        return message
 
     @staticmethod
     def _extract_search_candidates(stdout: str) -> list[SearchCandidate]:

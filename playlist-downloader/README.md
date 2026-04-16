@@ -24,6 +24,10 @@ The project installs its Python dependencies through `pip`, including `yt-dlp`, 
 playlist-downloader download [OPTIONS] PLAYLIST_FILE OUTPUT_DIR
 ```
 
+```bash
+playlist-downloader review YAML_FILE PLAYLIST_FOLDER
+```
+
 ### Playlist mode
 
 Download tracks from a YAML file:
@@ -57,6 +61,20 @@ Review candidates interactively before downloading:
 ```bash
 playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho" "1" --review-search
 ```
+
+### Review mode
+
+Compare a YAML playlist against an existing folder of downloaded tracks:
+
+```bash
+playlist-downloader review ../context/example.yaml /tmp/playlist-reader-smoke
+```
+
+Review mode processes the YAML tracks ordered by `posicao` and checks the playlist folder using this strategy:
+
+- first tries to find a file whose metadata matches the same `posicao`
+- if not found by `posicao`, tries to match by `nome`, first `artista`, and `album`
+- if still not found, reports the missing track and includes it in a YAML manifest
 
 ## Options
 
@@ -114,6 +132,7 @@ playlist:
 - The numeric suffix is sequential, for example `Clássicos Melódicos BR-001.skipped.yaml`.
 - Tracks that do not meet the smart-search requirements are exported to `OUTPUT_DIR/.playlist-downloader/unresolved/<playlist-name>-NNN.unresolved.yaml`.
 - Tracks that fail on download are exported to `OUTPUT_DIR/.playlist-downloader/failed/<playlist-name>-NNN.failed.yaml`.
+- Review mode exports missing tracks to `PLAYLIST_FOLDER/.playlist-downloader/missing/<playlist-name>-NNN.missing.yaml`.
 - Without `--verbose`, the CLI stays mostly quiet and always prints a final summary.
 - With `--show-url`, resolved URLs are listed in the final summary.
 

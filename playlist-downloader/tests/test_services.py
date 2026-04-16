@@ -11,6 +11,7 @@ from playlist_downloader.models.download_options import DownloadOptions
 from playlist_downloader.models.playlist import Playlist, Track
 from playlist_downloader.models.search_candidate import SearchCandidate
 from playlist_downloader.services.playlist_download_service import PlaylistDownloadService
+from playlist_downloader.services.playlist_review_service import PlaylistReviewService
 from playlist_downloader.services.writers.skipped_tracks import SkippedTracksWriter
 from playlist_downloader.services.writers.unresolved_tracks import UnresolvedTracksWriter
 from playlist_downloader.errors.download_error import DownloadError
@@ -66,6 +67,14 @@ class FakeMetadataWriter:
             raise RuntimeError(f"metadata {track.nome}")
 
 
+class FakeMetadataReader:
+    def __init__(self, tracks_by_path: dict[Path, Track]) -> None:
+        self.tracks_by_path = tracks_by_path
+
+    def read(self, filepath: Path) -> Track:
+        return self.tracks_by_path[filepath]
+
+
 class FakeReporter:
     def __init__(self, review_actions: list[str] | None = None) -> None:
         self.events: list[tuple[str, str]] = []
@@ -92,6 +101,26 @@ class FakeReporter:
 
     def review_candidate(self, track: Track, candidate_index: int, total_candidates: int, scored_candidate) -> str:
         return self.review_actions.pop(0)
+
+    def on_collection_finished(self, summary) -> None:
+        self.summary = summary
+
+
+class FakeReviewReporter:
+    def __init__(self) -> None:
+        self.events: list[tuple[str, str]] = []
+        self.summary = None
+
+    def on_collection_start(self, label: str, total_tracks: int) -> None:
+        self.events.append(("collection_start", f"{label}:{total_tracks}"))
+
+    def on_track_missing(self, index: int, total_tracks: int, track: Track) -> None:
+        self.events.append(
+            (
+                "track_missing",
+                f"{index}/{total_tracks}:posicao={track.posicao}:nome={track.nome}:artista={track.primeiro_artista}:album={track.album}",
+            )
+        )
 
     def on_collection_finished(self, summary) -> None:
         self.summary = summary
@@ -258,6 +287,66 @@ class PlaylistDownloadServiceTest(unittest.TestCase):
         self.assertEqual(0, summary.downloaded_count)
         self.assertEqual(1, summary.failed_count)
         self.assertIn("metadata update failed", summary.results[0].error or "")
+
+
+class PlaylistReviewServiceTest(unittest.TestCase):
+    def test_review_playlist_uses_position_then_metadata_and_writes_missing_manifest(self) -> None:
+        playlist = Playlist(
+            nome="Minha Playlist",
+            musicas=[
+                Track(nome="Faixa B", artistas=["Artista B"], album="Album B", posicao=2),
+                Track(nome="Faixa A", artistas=["Artista A"], album="Album A", posicao=1),
+                Track(nome="Faixa C", artistas=["Artista C"], album="Album C", posicao=3),
+            ],
+        )
+        reporter = FakeReviewReporter()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            playlist_folder = Path(temp_dir)
+            faixa_por_posicao = playlist_folder / "track-01.mp3"
+            faixa_por_metadados = playlist_folder / "track-b.mp3"
+            faixa_sem_match = playlist_folder / "other.mp3"
+            for filepath in [faixa_por_posicao, faixa_por_metadados, faixa_sem_match]:
+                filepath.write_bytes(b"")
+
+            metadata_reader = FakeMetadataReader(
+                {
+                    faixa_por_posicao: Track(
+                        nome="Qualquer Nome",
+                        artistas=["Outro Artista"],
+                        album="Outro Album",
+                        posicao=1,
+                    ),
+                    faixa_por_metadados: Track(
+                        nome="Faixa B",
+                        artistas=["Artista B"],
+                        album="Album B",
+                        posicao=77,
+                    ),
+                    faixa_sem_match: Track(
+                        nome="Outra",
+                        artistas=["Pessoa"],
+                        album="Nada",
+                        posicao=99,
+                    ),
+                }
+            )
+            service = PlaylistReviewService(
+                metadata_reader=metadata_reader,
+                parser=FakeParser(playlist),
+                reporter=reporter,
+            )
+
+            summary = service.review_playlist(Path("playlist.yaml"), playlist_folder)
+            manifest_data = yaml.safe_load(summary.missing_manifest_path.read_text(encoding="utf-8"))  # type: ignore[union-attr]
+
+        self.assertEqual(3, summary.total_tracks)
+        self.assertEqual(1, summary.missing_count)
+        self.assertEqual(["position", "metadata", None], [result.matched_by for result in summary.results])
+        self.assertEqual("Faixa C", summary.results[-1].track.nome)
+        self.assertIn("track_missing", [event[0] for event in reporter.events])
+        self.assertEqual("Faixa C", manifest_data["playlist"]["musicas"][0]["nome"])
+        self.assertEqual(3, manifest_data["playlist"]["musicas"][0]["posicao"])
 
 
 if __name__ == "__main__":

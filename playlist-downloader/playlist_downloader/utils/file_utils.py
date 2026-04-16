@@ -11,6 +11,6 @@ def resolve_file(file: str, description: str = "Playlist file") -> Path:
 
 def resolve_folder(folder: str, description: str = "Playlist folder") -> Path: 
     folder_path = Path(folder)
-    if not folder_path.is_dir or not folder_path.exists():
+    if not folder_path.is_dir() or not folder_path.exists():
         raise typer.BadParameter(f"{description} '{folder_path}' was not found.")
     return folder_path

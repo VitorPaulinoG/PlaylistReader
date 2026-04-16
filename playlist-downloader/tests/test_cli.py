@@ -32,7 +32,7 @@ class CliTest(unittest.TestCase):
             )
             output_dir = root / "out"
 
-            with patch("playlist_downloader.cli._build_service") as build_service:
+            with patch("playlist_downloader.commands.download._build_download_service") as build_service:
                 build_service.return_value.run_playlist.return_value = DownloadSummary(
                     label="List",
                     mode="playlist",
@@ -52,7 +52,7 @@ class CliTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "out"
 
-            with patch("playlist_downloader.cli._build_service") as build_service:
+            with patch("playlist_downloader.commands.download._build_download_service") as build_service:
                 build_service.return_value.run_search.return_value = DownloadSummary(
                     label="Song - Artist",
                     mode="search",

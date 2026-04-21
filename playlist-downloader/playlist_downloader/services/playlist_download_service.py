@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 from playlist_downloader.models.download_artifact import DownloadArtifact
 from playlist_downloader.models.track_download_result import TrackDownloadResult
@@ -63,6 +64,29 @@ class PlaylistDownloadService:
             options=options,
         )
 
+    def run_from_url(
+        self,
+        url: str,
+        title: str,
+        artist: str,
+        album: str,
+        position: int,
+        output_dir: Path,
+        options: DownloadOptions,
+    ) -> DownloadSummary:
+        track = Track(
+            nome=title,
+            artistas=[artist],
+            album=album,
+            posicao=position,
+        )
+        return self._run_direct_url(
+            track=track,
+            url=url,
+            output_dir=output_dir,
+            options=options,
+        )
+
     @staticmethod
     def _select_tracks(tracks: list[Track], options: DownloadOptions) -> list[Track]:
         selected_tracks = tracks[options.start_from :]
@@ -115,6 +139,39 @@ class PlaylistDownloadService:
         self.reporter.on_collection_finished(summary)
         return summary
 
+    def _run_direct_url(
+        self,
+        track: Track,
+        url: str,
+        output_dir: Path,
+        options: DownloadOptions,
+    ) -> DownloadSummary:
+        self.reporter.on_collection_start(track.titulo_exibicao, 1)
+        self.reporter.on_track_start(1, 1, track)
+
+        result = self._process_direct_url_track(track, url, output_dir, options)
+        results = [] if result.error == "__abort__" else [result]
+
+        summary = DownloadSummary(
+            label=track.titulo_exibicao,
+            mode="from_url",
+            total_tracks=1,
+            downloaded_count=sum(1 for current in results if current.success and not current.skipped),
+            failed_count=sum(1 for current in results if not current.success and not current.unresolved),
+            skipped_count=sum(1 for current in results if current.skipped),
+            unresolved_count=sum(1 for current in results if current.unresolved),
+            results=results,
+            skipped_manifest_path=self.skipped_tracks_writer.write(output_dir, track.titulo_exibicao, [track])
+            if self.skipped_tracks_writer is not None and result.skipped
+            else None,
+            unresolved_manifest_path=None,
+            failed_manifest_path=self.failed_tracks_writer.write(output_dir, track.titulo_exibicao, [track])
+            if self.failed_tracks_writer is not None and results and not result.success and not result.unresolved
+            else None,
+        )
+        self.reporter.on_collection_finished(summary)
+        return summary
+
     def _process_track(
         self,
         index: int,
@@ -123,8 +180,41 @@ class PlaylistDownloadService:
         output_dir: Path,
         options: DownloadOptions,
     ) -> TrackDownloadResult:
+        return self._process_download(
+            index=index,
+            total_tracks=total_tracks,
+            track=track,
+            artifact_loader=lambda: self._resolve_and_download(track, output_dir, options),
+        )
+
+    def _process_direct_url_track(
+        self,
+        track: Track,
+        url: str,
+        output_dir: Path,
+        options: DownloadOptions,
+    ) -> TrackDownloadResult:
+        return self._process_download(
+            index=1,
+            total_tracks=1,
+            track=track,
+            artifact_loader=lambda: self.downloader.download_from_url(
+                track=track,
+                url=url,
+                output_dir=output_dir,
+                overwrite=options.overwrite,
+            ),
+        )
+
+    def _process_download(
+        self,
+        index: int,
+        total_tracks: int,
+        track: Track,
+        artifact_loader: Callable[[], DownloadArtifact],
+    ) -> TrackDownloadResult:
         try:
-            artifact = self._resolve_and_download(track, output_dir, options)
+            artifact = artifact_loader()
             if artifact.skipped:
                 self.reporter.on_track_skipped(index, total_tracks, track, artifact)
                 return TrackDownloadResult(

@@ -30,6 +30,7 @@ class FakeDownloader:
         self.failures = failures or set()
         self.candidates = candidates or []
         self.download_calls: list[tuple[str, bool]] = []
+        self.download_from_url_calls: list[tuple[str, str, bool]] = []
         self.candidate_downloads: list[str] = []
 
     def download(self, track: Track, output_dir: Path, overwrite: bool = False) -> DownloadArtifact:
@@ -39,6 +40,15 @@ class FakeDownloader:
         return DownloadArtifact(
             filepath=output_dir / f"{track.titulo_exibicao}.mp3",
             source_url=f"https://example.com/{track.nome}",
+        )
+
+    def download_from_url(self, track: Track, url: str, output_dir: Path, overwrite: bool = False) -> DownloadArtifact:
+        self.download_from_url_calls.append((track.nome, url, overwrite))
+        if track.nome in self.failures:
+            raise DownloadError(f"failed {track.nome}")
+        return DownloadArtifact(
+            filepath=output_dir / f"{track.titulo_exibicao}.mp3",
+            source_url=url,
         )
 
     def search_candidates(self, track: Track, candidate_count: int) -> list[SearchCandidate]:
@@ -287,6 +297,31 @@ class PlaylistDownloadServiceTest(unittest.TestCase):
         self.assertEqual(0, summary.downloaded_count)
         self.assertEqual(1, summary.failed_count)
         self.assertIn("metadata update failed", summary.results[0].error or "")
+
+    def test_run_from_url_downloads_track_with_provided_metadata(self) -> None:
+        downloader = FakeDownloader()
+        service = PlaylistDownloadService(
+            parser=FakeParser(Playlist()),
+            downloader=downloader,
+            metadata_writer=FakeMetadataWriter(),
+            reporter=FakeReporter(),
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            summary = service.run_from_url(
+                "https://example.com/song",
+                "Song",
+                "Artist",
+                "Album",
+                7,
+                Path(temp_dir),
+                DownloadOptions(overwrite=True),
+            )
+
+        self.assertEqual([("Song", "https://example.com/song", True)], downloader.download_from_url_calls)
+        self.assertEqual("from_url", summary.mode)
+        self.assertEqual(1, summary.downloaded_count)
+        self.assertEqual("https://example.com/song", summary.results[0].source_url)
 
 
 class PlaylistReviewServiceTest(unittest.TestCase):

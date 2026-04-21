@@ -133,6 +133,35 @@ class DownloaderTest(unittest.TestCase):
         self.assertEqual(destination, result.filepath)
         self.assertEqual(b"new", final_bytes)
 
+    def test_download_from_url_uses_explicit_source_url(self) -> None:
+        track = Track(nome="Faixa", artistas=["Artista"], album="Album", posicao=1)
+        downloader = YtDlpTrackDownloader(python_executable="python-test")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            source_path = output_dir / "video-id.mp3"
+            source_path.write_bytes(b"new")
+
+            completed_process = CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout=f"{source_path}\n",
+                stderr="",
+            )
+
+            with patch(
+                "playlist_downloader.services.downloaders.ytdlp_track_downloader.subprocess.run",
+                return_value=completed_process,
+            ):
+                result = downloader.download_from_url(
+                    track=track,
+                    url="https://example.com/song",
+                    output_dir=output_dir,
+                    overwrite=True,
+                )
+
+        self.assertEqual("https://example.com/song", result.source_url)
+
     def test_download_skips_existing_file_without_overwrite(self) -> None:
         track = Track(nome="Faixa", artistas=["Artista"], album="Album", posicao=1)
         downloader = YtDlpTrackDownloader(python_executable="python-test")

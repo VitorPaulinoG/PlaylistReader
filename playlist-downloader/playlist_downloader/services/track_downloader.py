@@ -7,6 +7,13 @@ from playlist_downloader.models.search_candidate import SearchCandidate
 
 class TrackDownloader(Protocol):
     def download(self, track: Track, output_dir: Path, overwrite: bool = False) -> DownloadArtifact: ...
+    def download_from_url(
+        self,
+        track: Track,
+        url: str,
+        output_dir: Path,
+        overwrite: bool = False,
+    ) -> DownloadArtifact: ...
     def search_candidates(self, track: Track, candidate_count: int) -> list[SearchCandidate]: ...
     def download_candidate(
         self,

@@ -86,6 +86,45 @@ class CliTest(unittest.TestCase):
         self.assertEqual(5, options.candidate_count)
         self.assertTrue(options.prefer_official)
 
+    def test_download_from_url_mode_uses_output_dir_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "out"
+
+            with patch("playlist_downloader.commands.download._build_download_service") as build_service:
+                build_service.return_value.run_from_url.return_value = DownloadSummary(
+                    label="Song - Artist",
+                    mode="from_url",
+                    total_tracks=1,
+                    downloaded_count=1,
+                    failed_count=0,
+                    skipped_count=0,
+                    unresolved_count=0,
+                    results=[],
+                )
+                result = self.runner.invoke(
+                    app,
+                    [
+                        "download",
+                        str(output_dir),
+                        "--from-url",
+                        "https://example.com/song",
+                        "Song",
+                        "Artist",
+                        "Album",
+                        "10",
+                    ],
+                )
+
+        self.assertEqual(0, result.exit_code, result.output)
+        url, title, artist, album, position, output_dir_arg, options = build_service.return_value.run_from_url.call_args.args
+        self.assertEqual("https://example.com/song", url)
+        self.assertEqual("Song", title)
+        self.assertEqual("Artist", artist)
+        self.assertEqual("Album", album)
+        self.assertEqual(10, position)
+        self.assertEqual(output_dir, output_dir_arg)
+        self.assertFalse(options.smart_search)
+
     def test_download_rejects_limit_with_search(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_dir = Path(temp_dir) / "out"
@@ -106,6 +145,52 @@ class CliTest(unittest.TestCase):
 
         self.assertNotEqual(0, result.exit_code)
         self.assertIn("--limit and --start-from cannot be used with --search.", result.output)
+
+    def test_download_rejects_conflicting_input_modes(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "out"
+            result = self.runner.invoke(
+                app,
+                [
+                    "download",
+                    str(output_dir),
+                    "--search",
+                    "Song",
+                    "Artist",
+                    "Album",
+                    "10",
+                    "--from-url",
+                    "https://example.com/song",
+                    "Song",
+                    "Artist",
+                    "Album",
+                    "10",
+                ],
+            )
+
+        self.assertNotEqual(0, result.exit_code)
+        self.assertIn("Choose exactly one input mode", result.output)
+
+    def test_download_rejects_search_flags_with_from_url(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir) / "out"
+            result = self.runner.invoke(
+                app,
+                [
+                    "download",
+                    str(output_dir),
+                    "--from-url",
+                    "https://example.com/song",
+                    "Song",
+                    "Artist",
+                    "Album",
+                    "10",
+                    "--smart-search",
+                ],
+            )
+
+        self.assertNotEqual(0, result.exit_code)
+        self.assertIn("--smart-search and --review-search cannot be used with --from-url.", result.output)
 
     def test_download_rejects_conflicting_search_modes(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

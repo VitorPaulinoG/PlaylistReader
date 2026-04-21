@@ -34,6 +34,20 @@ class YtDlpTrackDownloader:
     cookies_from_browser: str | None = None
 
     def download(self, track: Track, output_dir: Path, overwrite: bool = False) -> DownloadArtifact:
+        return self.download_from_url(
+            track=track,
+            url=f"ytsearch1:{build_search_query(track)}",
+            output_dir=output_dir,
+            overwrite=overwrite,
+        )
+
+    def download_from_url(
+        self,
+        track: Track,
+        url: str,
+        output_dir: Path,
+        overwrite: bool = False,
+    ) -> DownloadArtifact:
         output_dir.mkdir(parents=True, exist_ok=True)
         target_path = output_dir / f"{sanitize_filename(track.titulo_exibicao)}.mp3"
 
@@ -41,7 +55,7 @@ class YtDlpTrackDownloader:
             return DownloadArtifact(filepath=target_path, skipped=True)
 
         result = subprocess.run(
-            self._build_legacy_download_command(output_dir, track),
+            self._build_download_url_command(output_dir, url),
             capture_output=True,
             text=True,
         )
@@ -51,7 +65,7 @@ class YtDlpTrackDownloader:
 
         artifact = self._extract_download_artifact(result.stdout)
         final_path = self._move_to_track_name(artifact.filepath, output_dir, track, overwrite)
-        return DownloadArtifact(filepath=final_path, source_url=artifact.source_url)
+        return DownloadArtifact(filepath=final_path, source_url=artifact.source_url or url)
 
     def search_candidates(self, track: Track, candidate_count: int) -> list[SearchCandidate]:
         result = subprocess.run(
@@ -96,10 +110,7 @@ class YtDlpTrackDownloader:
         return DownloadArtifact(filepath=final_path, source_url=candidate.webpage_url)
 
     def _build_legacy_download_command(self, output_dir: Path, track: Track) -> list[str]:
-        return self._build_download_url_command(
-            output_dir=output_dir,
-            url=f"ytsearch1:{build_search_query(track)}",
-        )
+        return self._build_download_url_command(output_dir=output_dir, url=f"ytsearch1:{build_search_query(track)}")
 
     def _build_search_command(self, track: Track, candidate_count: int) -> list[str]:
         return [

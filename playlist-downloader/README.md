@@ -1,6 +1,6 @@
 # playlist-downloader
 
-CLI for downloading tracks from a YAML playlist as MP3 files with ID3 metadata, powered by `yt-dlp`.
+CLI for downloading tracks as MP3 files with ID3 metadata, powered by `yt-dlp`.
 
 ## Requirements
 
@@ -22,6 +22,14 @@ The project installs its Python dependencies through `pip`, including `yt-dlp`, 
 
 ```bash
 playlist-downloader download [OPTIONS] PLAYLIST_FILE OUTPUT_DIR
+```
+
+```bash
+playlist-downloader download [OPTIONS] OUTPUT_DIR --search TITLE ARTIST ALBUM POSITION
+```
+
+```bash
+playlist-downloader download [OPTIONS] OUTPUT_DIR --from-url URL TITLE ARTIST ALBUM POSITION
 ```
 
 ```bash
@@ -62,6 +70,16 @@ Review candidates interactively before downloading:
 playlist-downloader download /tmp/playlist-reader-search --search "Juízo Final" "Nelson Cavaquinho" "Nelson Cavaquinho" "1" --review-search
 ```
 
+### From URL mode
+
+Download a single track from a specific URL while preserving the final filename and ID3 metadata:
+
+```bash
+playlist-downloader download /tmp/playlist-reader-url --from-url "https://www.youtube.com/watch?v=dQw4w9WgXcQ" "Never Gonna Give You Up" "Rick Astley" "Whenever You Need Somebody" "1"
+```
+
+Use this mode when you already know the exact media URL and do not want the CLI to search for candidates.
+
 ### Review mode
 
 Compare a YAML playlist against an existing folder of downloaded tracks:
@@ -88,10 +106,13 @@ Review mode processes the YAML tracks ordered by `posicao` and checks the playli
 - `--candidate-count INT`: number of candidates to inspect in smart or review search
 - `--prefer-official`: boost candidates that look like official or auto-generated releases
 - `--search TITLE ARTIST ALBUM POSITION`: download a single manually specified track
+- `--from-url URL TITLE ARTIST ALBUM POSITION`: download a single track from an explicit URL with manual metadata
 
 `--limit` and `--start-from` are only valid in playlist mode.
 When a target file already exists and `--overwrite` is not set, the track is skipped.
 `--smart-search` and `--review-search` are mutually exclusive.
+`--search` and `--from-url` are mutually exclusive.
+`--smart-search`, `--review-search`, `--candidate-count`, and `--prefer-official` are not valid with `--from-url`.
 
 ## Review Search Actions
 
@@ -126,6 +147,7 @@ playlist:
 ## Behavior
 
 - Search queries are built from `title + first artist + album`.
+- `--from-url` bypasses search entirely and downloads from the provided URL.
 - Output files are named as `Title - First Artist.mp3`.
 - Metadata is written with title, artists, album, and track number.
 - Skipped tracks are exported to `OUTPUT_DIR/.playlist-downloader/skipped/<playlist-name>-NNN.skipped.yaml`.

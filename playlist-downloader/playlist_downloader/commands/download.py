@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Annotated
 
 import typer
 
+from playlist_downloader.commands.download_modes import DownloadCommandInput, build_download_mode_dispatcher
 from playlist_downloader.models.download_options import DownloadOptions
 from playlist_downloader.services.downloaders.ytdlp_track_downloader import YtDlpTrackDownloader
 from playlist_downloader.services.writers.id3_metadata_writer import Id3MetadataWriter
@@ -14,7 +14,6 @@ from playlist_downloader.services.writers.skipped_tracks import SkippedTracksWri
 from playlist_downloader.services.writers.unresolved_tracks import UnresolvedTracksWriter
 from playlist_downloader.services.writers.failed_tracks import FailedTracksWriter
 from playlist_downloader.services.parsers.yaml_parser import YamlPlaylistParser
-from playlist_downloader.utils.file_utils import resolve_file
 
 app = typer.Typer()
 
@@ -25,7 +24,7 @@ def download(
         typer.Argument(
             ...,
             metavar="[PLAYLIST_FILE] OUTPUT_DIR",
-            help="Use PLAYLIST_FILE OUTPUT_DIR, or only OUTPUT_DIR with --search.",
+            help="Use PLAYLIST_FILE OUTPUT_DIR, or only OUTPUT_DIR with --search/--from-url.",
         ),
     ],
     overwrite: Annotated[
@@ -72,13 +71,15 @@ def download(
             metavar="TITLE ARTIST ALBUM POSITION",
         ),
     ] = None,
+    from_url: Annotated[
+        tuple[str, str, str, str, int] | None,
+        typer.Option(
+            "--from-url",
+            help="Download a single track from URL using URL TITLE ARTIST ALBUM POSITION.",
+            metavar="URL TITLE ARTIST ALBUM POSITION",
+        ),
+    ] = None,
 ) -> None:
-    playlist_file, output_dir = _validate_and_resolve_paths(paths, search)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if search is not None and (limit is not None or start_from != 0):
-        raise typer.BadParameter("--limit and --start-from cannot be used with --search.")
-
     service = _build_download_service(verbose=verbose, show_url=show_url)
     options = _build_download_options(
         overwrite=overwrite,
@@ -91,28 +92,14 @@ def download(
         candidate_count=candidate_count,
         prefer_official=prefer_official,
     )
-
-    if search is None:
-        summary = service.run_playlist(playlist_file, output_dir, options)
-    else:
-        title, artist, album, position = search
-        summary = service.run_search(title, artist, album, position, output_dir, options)
+    dispatcher = build_download_mode_dispatcher()
+    summary = dispatcher.dispatch(
+        DownloadCommandInput(paths=paths, search=search, from_url=from_url),
+        service=service,
+        options=options,
+    )
     if summary.failed_count:
         raise typer.Exit(code=4)
-
-def _validate_and_resolve_paths(paths: list[str], search: tuple[str, str, str, int] | None) -> tuple[Path | None, Path]:
-    if search is None:
-        if len(paths) != 2:
-            raise typer.BadParameter(
-                "download expects PLAYLIST_FILE OUTPUT_DIR when --search is not used."
-            )
-        return resolve_file(paths[0]), Path(paths[1])
-
-    if len(paths) != 1:
-        raise typer.BadParameter(
-            "download expects only OUTPUT_DIR when --search is used."
-        )
-    return None, Path(paths[0])
 
 def _build_download_service(verbose: bool, show_url: bool) -> PlaylistDownloadService:
     return PlaylistDownloadService(
